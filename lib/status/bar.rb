@@ -65,5 +65,11 @@ module Status
         implicit_completable.complete?
       end
     end
+
+    def print_while(...)
+      print_until do
+        !yield
+      end
+    end
   end
 end
