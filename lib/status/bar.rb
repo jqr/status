@@ -56,10 +56,13 @@ module Status
       print_clear if clear
     end
 
+    def implicit_completable
+      @parts.detect { _1.is_a?(Progress) || _1.is_a?(Ratio) } || raise("No Progress/Rate part to check for completion")
+    end
+
     def print_until_complete(...)
-      implicit_progress = @parts.detect { _1.is_a?(Progress) } || raise("No Progress part to check for completion")
       print_until do
-        implicit_progress.complete?
+        implicit_completable.complete?
       end
     end
   end
