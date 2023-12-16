@@ -16,7 +16,7 @@ end
 ```ruby
 counter = 0
 status = Status.new("Saving users", Status.progress(100) { counter })
-100.times do
+50.times do
   counter += 1
   sleep 0.1
   print status
@@ -27,13 +27,11 @@ puts "Done!"
 ![asciicast of code](examples/readme2.gif)
 
 ```ruby
-counter = 0
-status = Status.new("Downloading", Status.rate { counter })
-100.times do
-  counter += rand * 100
-  sleep 0.1
-  print status
-end
+total = 10_000
+downloaded = 0
+status = Status.new("Downloading", Status.rate { downloaded }, Status.progress(total) { downloaded })
+Thread.new { loop { downloaded += rand(1_000); sleep 0.1 } }
+status.print_while { downloaded < total}
 ```
 ![asciicast of code](examples/readme3.gif)
 
@@ -49,3 +47,20 @@ status = Status.new("Pollers", Status.poller(0.5, Status.spinner), Status.poller
 end
 ```
 ![asciicast of code](examples/readme4.gif)
+
+Mixing output:
+
+```ruby 5x19
+status = Status.new("Waiting")
+threads = 5.times.map do |index|
+  Thread.new do
+    sleep index + 1
+    # Safely puts without interfering with the status bar
+    status.puts "hello from thread #{index}"
+  end
+end
+status.add(Status.progress(threads.size) { threads.reject(&:alive?).size })
+status.print_until_complete(clear: false)
+puts "All finished!"
+```
+![asciicast of code](examples/readme5.gif)
