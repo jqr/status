@@ -8,6 +8,7 @@ module Status
       @total = total
       @size = size
       @counter = counter || counter_block
+      @complete = false
 
       raise ArgumentError, "counter or counter_block required" unless @counter
 
@@ -27,7 +28,7 @@ module Status
 
     def to_s
       count = @counter.call
-      complete = count >= total
+      @complete = count >= total
 
       fillable = size - @left.size - @right.size
 
@@ -38,9 +39,13 @@ module Status
       unfilled = 0 if unfilled < 0
 
       partial = filled % 1
-      partial_filler = complete ? "" : @filler[partial * @filler.size.floor]
+      partial_filler = @complete ? "" : @filler[partial * @filler.size.floor]
 
       @left + (@filler.last * filled.floor) + partial_filler + (@filler.first * unfilled) + @right
+    end
+
+    def complete?
+      @complete
     end
   end
 end

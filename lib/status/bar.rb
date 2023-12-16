@@ -50,5 +50,12 @@ module Status
       end
       print_clear if clear
     end
+
+    def print_until_complete(...)
+      implicit_progress = @parts.detect { _1.is_a?(Progress) } || raise("No Progress part to check for completion")
+      print_until do
+        implicit_progress.complete?
+      end
+    end
   end
 end
