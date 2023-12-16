@@ -16,8 +16,9 @@ RUBY_SETUP = <<~EOR
 
 EOR
 
-def command_to_image(command, image_path)
-  asciinema = "asciinema rec - --rows 1 --cols 30 --overwrite --quiet --command #{command.shellescape}"
+def command_to_image(command, image_path, rows: 1, cols: 30)
+
+  asciinema = "asciinema rec - --rows #{rows.to_s.shellescape} --cols #{cols.to_s.shellescape} --overwrite --quiet --command #{command.shellescape}"
   agg = "agg - #{image_path.shellescape} --theme github-light"
   cmd = "#{asciinema} | #{agg}"
 
@@ -32,48 +33,61 @@ def command_to_image(command, image_path)
   end
 end
 
-def replace_code_image_blocks(markdown)
-  markdown.gsub(/\n```ruby\n.*?\n```\n(!\[.*?\]\(.*?\)\n)?/m) do |match|
-    match_without_image = match.sub(/\n```\n.*\z/m, "\n```\n")
-    yield(match_without_image)
-  end
+def replace_code_image_blocks(markdown, &matcher)
+  markdown.gsub(/\n```ruby.*?\n.*?\n```\n(!\[.*?\]\(.*?\)\n)?/m, &matcher)
 end
 
-def extract_code_from_code_block(markdown)
-  markdown.sub(/\A\n```ruby\n(.*)\n```/m, '\1')
+def code_block_without_image(markdown)
+  markdown.sub(/\n```\n.*\z/m, "\n```\n")
+end
+
+def code_and_options_from_code_block(markdown)
+  options_string, code = markdown.sub(/\A\n```ruby(.*?)\n(.*)\n```/m, '\1---\2').split("---", 2)
+  options = {}
+  if options_string.include?("x")
+    rows, cols = options_string.lstrip.split("x").map(&:to_i)
+    options.merge!(rows:, cols:)
+  end
+  [options, code]
 end
 
 Dir.chdir(GEM_ROOT)
 
+if ARGV.first
+  limit_to_section = ARGV.first.to_i
+end
 threads = []
 
 count = 0
 result = replace_code_image_blocks(File.read(README_PATH)) do |code_block|
   count += 1
 
-  ruby_filename  = "examples/readme#{count}.rb"
-  image_filename = "examples/readme#{count}.gif"
+  if !limit_to_section || limit_to_section == count
+    ruby_filename  = "examples/readme#{count}.rb"
+    image_filename = "examples/readme#{count}.gif"
 
-  ruby = extract_code_from_code_block(code_block)
-  abort "Unable to extract ruby from:\n#{code_block}" if ruby.to_s.size == 0
+    imageless_code_block = code_block_without_image(code_block)
+    options, ruby = code_and_options_from_code_block(imageless_code_block)
+    abort "Unable to extract ruby from:\n#{code_block}" if ruby.to_s.size == 0
 
-  File.open(ruby_filename, "w") do |file|
-    file.write(RUBY_SETUP + ruby)
+    File.open(ruby_filename, "w") do |file|
+      file.write(RUBY_SETUP + ruby)
+    end
+
+    threads << Thread.new do
+      command_to_image("ruby #{ruby_filename}", image_filename, **options)
+    end
+
+    "#{imageless_code_block}![asciicast of code](#{image_filename})\n"
+  else
+    code_block
   end
-
-  threads << Thread.new do
-    command_to_image("ruby #{ruby_filename}", image_filename)
-  end
-
-  "#{code_block}![asciicast of code](#{image_filename})\n"
 end
 
-abort("ERROR: Didn't find any code to render.") if count == 0
+abort("ERROR: Didn't find any code to render.") if threads.size == 0
 
 $status = Status.new("Rendering code blocks")
-$status.add do
-  "[#{threads.count { !_1.alive? } }/#{threads.size}]"
-end
+$status.add(Status.ratio(threads.size) { threads.count { !_1.alive? } })
 $status.add(Status.progress(threads.size) { threads.count { !_1.alive? } })
 $status.add(Status.spinner)
 $status.print_until_complete(clear: false)
