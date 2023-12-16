@@ -42,6 +42,11 @@ module Status
       print clear
     end
 
+    def puts(...)
+      print_clear
+      super(...)
+    end
+
     def print_until(wait: 0.05, clear: true)
       loop do
         print self
