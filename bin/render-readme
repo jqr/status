@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "fileutils"
+require "shellwords"
+require "open3"
+
+GEM_ROOT = File.join(__dir__, "..")
+README_PATH = "README.md"
+RUBY_SETUP = <<~EOR
+  $LOAD_PATH << File.expand_path(File.join(__dir__, "..", "lib"))
+  require "status"
+
+EOR
+
+def command_to_image(command, image_path)
+  asciinema = "asciinema rec - --rows 1 --cols 30 --overwrite --quiet --command #{command.shellescape}"
+  agg = "agg - #{image_path.shellescape} --theme github-light"
+  cmd = "#{asciinema} | #{agg}"
+
+  stdout, stderr, status = Open3.capture3(cmd)
+
+  if !status.success?
+    puts stdout
+    puts stderr
+    abort("ERROR: Command exited with #{status.exitstatus} status: #{cmd}")
+  end
+end
+
+def replace_code_image_blocks(markdown)
+  markdown.gsub(/\n```ruby\n.*?\n```\n(!\[.*?\]\(.*?\)\n)?/m) do |match|
+    match_without_image = match.sub(/\n```\n.*\z/m, "\n```\n")
+    yield(match_without_image)
+  end
+end
+
+def extract_code_from_code_block(markdown)
+  markdown.sub(/\A\n```ruby\n(.*)\n```/m, '\1')
+end
+
+Dir.chdir(GEM_ROOT)
+
+count = 0
+result = replace_code_image_blocks(File.read(README_PATH)) do |code_block|
+  count += 1
+
+  ruby_filename  = "examples/readme#{count}.rb"
+  image_filename = "examples/readme#{count}.gif"
+
+  ruby = extract_code_from_code_block(code_block)
+  abort "Unable to extract ruby from:\n#{code_block}" if ruby.to_s.size == 0
+
+  File.open(ruby_filename, "w") do |file|
+    file.write(RUBY_SETUP + ruby)
+  end
+
+  command_to_image("ruby #{ruby_filename}", image_filename)
+
+  "#{code_block}![asciicast of code](#{image_filename})\n"
+end
+
+abort("ERROR: Didn't find any code to render.") if count == 0
+
+File.open(README_PATH, "w") { _1.write(result) }
+puts "\nRendered #{count} code blocks."
