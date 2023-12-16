@@ -3,7 +3,10 @@
 
 require "fileutils"
 require "shellwords"
-require "open3"
+require "pty"
+
+$LOAD_PATH << File.expand_path(File.join(__dir__, "..", "lib"))
+require "status"
 
 GEM_ROOT = File.join(__dir__, "..")
 README_PATH = "README.md"
@@ -18,12 +21,14 @@ def command_to_image(command, image_path)
   agg = "agg - #{image_path.shellescape} --theme github-light"
   cmd = "#{asciinema} | #{agg}"
 
-  stdout, stderr, status = Open3.capture3(cmd)
+  output, input, pid = PTY.spawn(cmd)
+  input.close
 
-  if !status.success?
-    puts stdout
-    puts stderr
-    abort("ERROR: Command exited with #{status.exitstatus} status: #{cmd}")
+  output.read until output.eof?
+
+  Process.waitpid(pid)
+  if !$?.success?
+    raise("ERROR: Command exited with #{$?.exitstatus} status: #{cmd}\n#{output}")
   end
 end
 
@@ -40,6 +45,8 @@ end
 
 Dir.chdir(GEM_ROOT)
 
+threads = []
+
 count = 0
 result = replace_code_image_blocks(File.read(README_PATH)) do |code_block|
   count += 1
@@ -54,12 +61,23 @@ result = replace_code_image_blocks(File.read(README_PATH)) do |code_block|
     file.write(RUBY_SETUP + ruby)
   end
 
-  command_to_image("ruby #{ruby_filename}", image_filename)
+  threads << Thread.new do
+    command_to_image("ruby #{ruby_filename}", image_filename)
+  end
 
   "#{code_block}![asciicast of code](#{image_filename})\n"
 end
 
 abort("ERROR: Didn't find any code to render.") if count == 0
 
+$status = Status.new("Rendering code blocks")
+$status.add do
+  "[#{threads.count { !_1.alive? } }/#{threads.size}]"
+end
+$status.add(Status.progress(threads.size) { threads.count { !_1.alive? } })
+$status.add(Status.spinner)
+$status.print_until_complete(clear: false)
+
+threads.each(&:join)
+
 File.open(README_PATH, "w") { _1.write(result) }
-puts "\nRendered #{count} code blocks."
