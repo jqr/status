@@ -5,7 +5,7 @@
 A library for showing status messages during long running processes. Supports spinners, progress bars, rates, static and dynamic text.
 
 ```ruby
-status = Status.new("Reticulating Splines", Spinner.new)
+status = Status.new("Reticulating Splines", Status.spinner)
 20.times do
   sleep 0.1
   print status
@@ -15,7 +15,7 @@ end
 
 ```ruby
 counter = 0
-status = Status.new("Saving users", Progress.new(100) { counter })
+status = Status.new("Saving users", Status.progress(100) { counter })
 100.times do
   counter += 1
   sleep 0.1
@@ -28,7 +28,7 @@ puts "Done!"
 
 ```ruby
 counter = 0
-status = Status.new("Downloading", Rate.new { counter })
+status = Status.new("Downloading", Status.rate { counter })
 100.times do
   counter += rand * 100
   sleep 0.1
@@ -41,7 +41,7 @@ Costly computation, or data too volatile? Pollers let you only render them every
 
 ```ruby
 counter = 0
-status = Status.new("Pollers", Poller.new(0.5, Spinner.new), Poller.new(1) { counter.round(2) })
+status = Status.new("Pollers", Status.poller(0.5, Status.spinner), Status.poller(1) { counter.round(2) })
 100.times do
   counter += rand * 100
   sleep 0.1
