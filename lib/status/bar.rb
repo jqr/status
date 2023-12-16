@@ -53,7 +53,7 @@ module Status
         break if yield
         sleep wait
       end
-      print_clear if clear
+      clear ? print_clear : puts
     end
 
     def implicit_completable
