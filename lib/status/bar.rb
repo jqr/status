@@ -41,5 +41,14 @@ module Status
     def print_clear
       print clear
     end
+
+    def print_until(wait: 0.05, clear: true)
+      loop do
+        print self
+        break if yield
+        sleep wait
+      end
+      print_clear if clear
+    end
   end
 end
