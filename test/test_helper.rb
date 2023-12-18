@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-GEM_ROOT = File.join(File.dirname(__FILE__), "..")
-$: << GEM_ROOT + "/lib"
+$LOAD_PATH << File.expand_path(File.join(__dir__, "..", "lib"))
+
 require "status"
 
 require "minitest/autorun"
@@ -15,10 +15,10 @@ Minitest::Reporters.use!(
   Minitest.backtrace_filter,
 )
 
-class Minitest::Spec
-  before :each do
-  end
+# class Minitest::Spec
+#   before :each do
+#   end
 
-  after :each do
-  end
-end
+#   after :each do
+#   end
+# end

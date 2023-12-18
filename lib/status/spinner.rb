@@ -24,7 +24,7 @@ module Status
 
     def to_s
       if @bounce
-        @index = (@index + 1) % (@frames.size * 2 - 2)
+        @index = (@index + 1) % ((@frames.size * 2) - 2)
         if @index >= @frames.size
           @frames[@frames.size - 2 - @index]
         else
