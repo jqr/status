@@ -2,7 +2,7 @@ $LOAD_PATH << File.expand_path(File.join(__dir__, "..", "lib"))
 require "status"
 
 status = Status.new("Waiting")
-threads = 5.times.map do |index|
+threads = 4.times.map do |index|
   Thread.new do
     sleep index + 1
     # Safely puts without interfering with the status bar

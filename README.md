@@ -26,7 +26,7 @@ puts "Done!"
 ```
 ![asciicast of code](examples/readme2.gif)
 
-```ruby
+```ruby 1x33
 total = 10_000
 downloaded = 0
 status = Status.new("Downloading", Status.rate { downloaded }, Status.progress(total) { downloaded })
@@ -50,9 +50,9 @@ end
 
 Mixing output:
 
-```ruby 5x19
+```ruby 6x19
 status = Status.new("Waiting")
-threads = 5.times.map do |index|
+threads = 4.times.map do |index|
   Thread.new do
     sleep index + 1
     # Safely puts without interfering with the status bar
