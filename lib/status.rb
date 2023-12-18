@@ -9,27 +9,27 @@ require "status/spinner"
 require "status/version"
 
 module Status
-  def self.new(...)
-    Bar.new(...)
+  def self.new(**options, &block)
+    Bar.new(**options, &block)
   end
 
-  def self.poller(...)
-    Poller.new(...)
+  def self.poller(**options, &block)
+    Poller.new(**options, &block)
   end
 
-  def self.progress(...)
-    Progress.new(...)
+  def self.progress(**options, &block)
+    Progress.new(**options, &block)
   end
 
-  def self.ratio(...)
-    Ratio.new(...)
+  def self.ratio(**options, &block)
+    Ratio.new(**options, &block)
   end
 
-  def self.rate(...)
-    Rate.new(...)
+  def self.rate(**options, &block)
+    Rate.new(**options, &block)
   end
 
-  def self.spinner(...)
-    Spinner.new(...)
+  def self.spinner(**options, &block)
+    Spinner.new(**options, &block)
   end
 end
