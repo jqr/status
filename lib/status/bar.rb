@@ -22,7 +22,7 @@ module Status
       @parts << part
     end
 
-    def to_s(clear: true, join: @join)
+    def to_s(clear: true, join: @join, skip_same: true)
       rendered_parts = @parts.map do |part|
         if part.respond_to?(:call)
           part.call
@@ -30,8 +30,12 @@ module Status
           part
         end
       end
-
-      @last_to_s = (clear ? CLEAR_LINE : "") + rendered_parts.compact.join(join)
+      new_to_s = (clear ? CLEAR_LINE : "") + rendered_parts.compact.join(join)
+      if skip_same && new_to_s == @last_to_s
+        ""
+      else
+        new_to_s
+      end
     end
 
     def clear
