@@ -46,9 +46,9 @@ module Status
       print clear
     end
 
-    def puts(**args)
+    def puts(*args)
       print_clear
-      super(**args)
+      super(*args)
       print @last_to_s if @last_to_s
     end
 
