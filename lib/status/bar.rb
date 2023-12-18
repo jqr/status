@@ -31,7 +31,7 @@ module Status
         end
       end
 
-      (clear ? CLEAR_LINE : "") + rendered_parts.compact.join(join)
+      @last_to_s = (clear ? CLEAR_LINE : "") + rendered_parts.compact.join(join)
     end
 
     def clear
@@ -45,6 +45,7 @@ module Status
     def puts(...)
       print_clear
       super(...)
+      print @last_to_s if @last_to_s
     end
 
     def print_until(wait: 0.05, clear: true)
@@ -53,21 +54,21 @@ module Status
         break if yield
         sleep wait
       end
-      clear ? print_clear : puts
+      clear ? print_clear : Kernel.puts
     end
 
     def implicit_completable
       @parts.detect { _1.is_a?(Progress) || _1.is_a?(Ratio) } || raise("No Progress/Rate part to check for completion")
     end
 
-    def print_until_complete(...)
-      print_until do
+    def print_until_complete(**options)
+      print_until(**options) do
         implicit_completable.complete?
       end
     end
 
-    def print_while(...)
-      print_until do
+    def print_while(**options)
+      print_until(**options) do
         !yield
       end
     end
