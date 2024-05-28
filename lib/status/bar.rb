@@ -4,6 +4,8 @@ module Status
   class Bar
     CLEAR_TO_END = "\e[K"
     CLEAR_LINE = "\r" + CLEAR_TO_END
+    HIDE_CURSOR = "\e[?25h"
+    SHOW_CURSOR = "\e[?24l"
 
     attr_accessor :parts, :join
 
@@ -30,7 +32,7 @@ module Status
           part
         end
       end
-      new_to_s = (clear ? CLEAR_LINE : "") + rendered_parts.compact.join(join)
+      new_to_s = (clear ? HIDE_CURSOR + CLEAR_LINE : "") + rendered_parts.compact.join(join) + (clear ? SHOW_CURSOR : "")
       if skip_same && new_to_s == @last_to_s
         ""
       else
@@ -39,7 +41,7 @@ module Status
     end
 
     def clear
-      CLEAR_LINE
+      HIDE_CURSOR + CLEAR_LINE + SHOW_CURSOR
     end
 
     def print_clear
